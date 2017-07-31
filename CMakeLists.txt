@@ -25,12 +25,26 @@ include_directories(${PROJECT_SOURCE_DIR}/source)
 
 file(GLOB headers ${PROJECT_SOURCE_DIR}/source/*.hh)
 file(GLOB sources ${PROJECT_SOURCE_DIR}/source/*.cc)
-add_library(intrinsic ${headers} ${sources})
 
-add_executable(intrin intrin.cc)
-target_link_libraries(intrin intrinsic)
+add_executable(intrin_autovec intrin.cc ${headers} ${sources})
 if(PRINT_VECTOR_INFO_MISSED)
-    set_target_properties(intrin PROPERTIES COMPILE_FLAGS "-fopt-info-vec-missed")
+    set_target_properties(intrin_autovec PROPERTIES COMPILE_FLAGS "-fopt-info-vec-missed")
+endif()
+
+if(USE_OPENMP)
+	add_executable(intrin_ompsimd intrin.cc ${headers} ${sources})
+	if(PRINT_VECTOR_INFO_MISSED)
+		set_target_properties(intrin_ompsimd PROPERTIES 
+			COMPILE_FLAGS "${OpenMP_CXX_FLAGS} -fopt-info-vec-missed" 
+			COMPILE_DEFINITIONS "USE_OPENMP" 
+			LINKER_FLAGS "${OpenMP_EXE_LINKER_FLAGS}")
+	else()
+		set_target_properties(intrin_ompsimd PROPERTIES 
+			COMPILE_FLAGS "${OpenMP_CXX_FLAGS}" 
+			COMPILE_DEFINITIONS "USE_OPENMP" 
+			LINKER_FLAGS "${OpenMP_EXE_LINKER_FLAGS}")
+	endif()
+
 endif()
 
 print_features()

@@ -14,15 +14,13 @@ Compile and Run:
    	$ cd build
    	$ cmake ..
    	$ make
-   	$ ./intrin
+   	$ ./intrin_autovec
 
-    ... will report the timing of intrinsics SIMD vs. OpenMP SIMD ...
+        ... will report the timing of intrinsics SIMD vs. whatever auto-vectorization the compiler does ...
+    
+   	$ ./intrin_ompsimd
 
-   	$ cmake -DUSE_OPENMP=OFF ..
-   	$ make
-   	$ ./intrin
-
-    ... will report the timing of intrinsics SIMD vs. whatever auto-vectorization the compiler does ...
+        ... will report the timing of intrinsics SIMD vs. OpenMP SIMD ...
 
 My results:
 
@@ -41,7 +39,7 @@ My results:
 			- intrinsics ~37% faster than OpenMP SIMD for += double operation
 			- intrinsics ~25% faster than OpenMP SIMD for += array operation
 		  
-	intrinsics vs. compiler optimizations (declaring highest GCC optimization -O3 and :
+	intrinsics vs. compiler optimizations (declaring highest GCC optimization -O3) :
 
 		Number of steps: 1000000000...
              intrin (double):  pi with 1000000000 steps is (5.00e+08, ... , 5.00e+08)  in [ 5.170 wall, 5.170 user + 0.000 system = 5.170 CPU [seconds] (100.0%) ]
