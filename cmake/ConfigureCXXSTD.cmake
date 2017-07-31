@@ -134,7 +134,7 @@ set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   cxx_range_for
   cxx_strong_enums
   cxx_uniform_initialization
-  # Features that MSVC 18.0 cannot support but in list of Madthreading coding
+  # Features that MSVC 18.0 cannot support but in list of coding
   # guidelines - to be required once support for that compiler is dropped.
   # Version 10.2 is coded without these being required.
   #cxx_deleted_functions
@@ -169,6 +169,6 @@ if(BUILD_CXXSTD GREATER 11)
   endif()
 endif()
 
-add_definitions(-DMAD_USE_CXX${BUILD_CXXSTD})
-set(CMAKE_CXX_STANDARD ${BUILD_CXXSTD})
+string(TOUPPER "${BUILD_CXXSTD}" UBUILD_CXXSTD)
+add_definitions(-DMAD_USE_CXX${UBUILD_CXXSTD})
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")

@@ -11,13 +11,13 @@
 
 #include <iostream>
 #include <iomanip>
-#include <immintrin.h>
 #include <inttypes.h>
 #include <cstdint>
 #include <cpuid.h>
 #include <string.h>
 #include <stdio.h>
 #include <chrono>
+#include <x86intrin.h>
 
 #include "timer.hh"
 #include "aligned_allocator.hh"
