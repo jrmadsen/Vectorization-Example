@@ -21,7 +21,7 @@
 
 #include "timer.hh"
 #include "aligned_allocator.hh"
-#include "Common.hh"
+#include "common.hh"
 
 using namespace std;
 
@@ -236,6 +236,22 @@ public:
 
 //============================================================================//
 
+void relative_compute_time(const double& t1, const double& t2,
+                           std::ostream& os = std::cout)
+{
+    using namespace std;
+    double _d = ((t2-t1)/t1)*100.0;
+    os << " " << setw(35) << "Relative compute time" << ":  ("
+       << setprecision(4) << t2 << "s - "
+       << setprecision(4) << t1 << "s)/("
+       << setprecision(4) << t1 << "s) * 100 = "
+       << setprecision(2) << fixed << _d << "%"
+       << endl << endl;
+    os.unsetf(ios::fixed);
+}
+
+//============================================================================//
+
 int main(int argc, char** argv)
 {
     uint64_t num_steps = GetEnvNumSteps(1000000000UL);
@@ -245,6 +261,8 @@ int main(int argc, char** argv)
         size = atoi(argv[1]);
 
     std::cout << "Number of steps: " << num_steps << "..." << std::endl;
+    double tw1, tw2, tw3, tw4;
+
     //========================================================================//
     {
         timer::timer t;
@@ -252,6 +270,7 @@ int main(int argc, char** argv)
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
         report(num_steps, sum.str(), t.stop_and_return(), "intrin (double)");
+        tw1 = t.real_elapsed();
     }
     //========================================================================//
     {
@@ -260,7 +279,10 @@ int main(int argc, char** argv)
         for(uint64_t i = 0; i < num_steps; ++i)
             sum += (static_cast<double>(i)-0.5)*step;
         report(num_steps, sum.str(), t.stop_and_return(), "array (double)");
+        tw2 = t.real_elapsed();
     }
+    //========================================================================//
+    relative_compute_time(tw1, tw2);
     //========================================================================//
     tv_vec   vincr = tv_vec(size, 0.0);
     tv_array aincr = tv_array(size, 0.0);
@@ -274,6 +296,7 @@ int main(int argc, char** argv)
             sum += vincr;
         }
         report(num_steps, sum.str(), t.stop_and_return(), "intrin (tv_vec)");
+        tw3 = t.real_elapsed();
     }
     //========================================================================//
     {
@@ -285,9 +308,11 @@ int main(int argc, char** argv)
             sum += aincr;
         }
         report(num_steps, sum.str(), t.stop_and_return(), "array (tv_array)");
+        tw4 = t.real_elapsed();
     }
     //========================================================================//
-
+    relative_compute_time(tw3, tw4);
+    //========================================================================//
 
 }
 
