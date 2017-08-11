@@ -5,7 +5,7 @@ A short little example of using intrinsics for vectorization
 Required:
 
    1) GCC C++-11 compiler (>= version 4.7)
-   2) Support for SSE2
+   2) Support for AVX and AVX2
    3) CMake (>= version 3.1.3)
     
 Compile and Run:
@@ -14,11 +14,11 @@ Compile and Run:
        $ cd build
        $ cmake ..
        $ make
-       $ ./intrin_autovec
+       $ ./intrin-autovec
 
         ... will report the timing of intrinsics SIMD vs. whatever auto-vectorization the compiler does ...
     
-       $ ./intrin_ompsimd
+       $ ./intrin-ompsimd
 
         ... will report the timing of intrinsics SIMD vs. OpenMP SIMD ...
 
