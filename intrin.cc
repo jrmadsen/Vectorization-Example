@@ -33,33 +33,59 @@ typedef uint64_t uint64;
 
 //----------------------------------------------------------------------------//
 /** 256-bit data structure */
-union W256_T
+struct alignas(64) W256_T
 {
-    __m256i  si;
-    __m256d  sd;
-    uint64  u64[4];
-    uint32  u32[8];
-    double    d[4];
+    typedef __m256d intrin;
+    union
+    {
+        intrin  pd;             // packed doubles
+        double  d[4];
+        struct { double dx, dy, dz, dt; };
+    };
 
-    W256_T() { memset(this, 0, sizeof(*this)); }
+    W256_T()
+    {
+      pd = _mm256_set1_pd(0.0);
+    }
+
+    W256_T(const intrin& _pd)
+    {
+      pd = _pd;
+    }
+
+    W256_T(intrin&& _pd)
+    {
+      pd = std::move(_pd);
+    }
+
 };// __attribute__ ((aligned(64)));
 
 //----------------------------------------------------------------------------//
 /** 256-bit data structure */
 union W256_FAKE_T
 {
-    uint64  si;
-    double  sd;
-    uint64 u64;
-    uint32 u32;
+    double  pd;
     double   d;
 
-    W256_FAKE_T() { memset(this, 0, sizeof(*this)); }
+    W256_FAKE_T()
+    {
+      void* mem = (void*) this;
+      size_t size = sizeof(*this);
+      int ret = posix_memalign(&mem, mad::SIMD_WIDTH, size);
+      if (ret != 0)
+      {
+          std::ostringstream o;
+          o << "cannot allocate " << size
+            << " bytes of memory with alignment " << mad::SIMD_WIDTH;
+          throw std::runtime_error(o.str().c_str());
+      }
+      memset(mem, 0, size);
+    }
 };// __attribute__ ((aligned(64)));
 
 /** 256-bit data type */
-typedef union W256_T        w256_t;
-typedef union W256_FAKE_T   f256_t;
+typedef struct W256_T        w256_t;
+typedef union  W256_FAKE_T   f256_t;
 //----------------------------------------------------------------------------//
 
 
@@ -79,7 +105,7 @@ public:
                      mad::aligned_alloc(m_size * sizeof(array_type),
                                         mad::SIMD_WIDTH));
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = _mm256_set1_pd(0.0);
+            m_data[i].pd = _mm256_set1_pd(0.0);
     }
 
     tv_vec(uint64 n, const double& val)
@@ -89,7 +115,7 @@ public:
                      mad::aligned_alloc(m_size * sizeof(array_type),
                                         mad::SIMD_WIDTH));
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = _mm256_set1_pd(val);
+            m_data[i].pd = _mm256_set1_pd(val);
     }
 
     ~tv_vec()
@@ -100,7 +126,7 @@ public:
     tv_vec& operator=(const double& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = _mm256_set1_pd(val);
+            m_data[i].pd = _mm256_set1_pd(val);
         return *this;
     }
 
@@ -108,7 +134,7 @@ public:
     tv_vec& operator+=(const double& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = _mm256_add_pd(m_data[i].sd, _mm256_set1_pd(val));
+            m_data[i].pd = _mm256_add_pd(m_data[i].pd, _mm256_set1_pd(val));
         return *this;
     }
 
@@ -116,9 +142,12 @@ public:
     tv_vec& operator+=(const tv_vec& val)
     {
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = _mm256_add_pd(m_data[i].sd, val.m_data[i].sd);
+            m_data[i].pd = _mm256_add_pd(m_data[i].pd, val.m_data[i].pd);
         return *this;
     }
+
+    double&      operator[](const uint32& i)       { return m_data[i/4].d[i%3]; }
+    const double operator[](const uint32& i) const { return m_data[i/4].d[i%3]; }
 
     std::string str() const
     {
@@ -126,9 +155,9 @@ public:
         ss.precision(_prec);
         ss << std::scientific;
         ss << "(";
-        ss << std::setw(_wid) << m_data[0].d[0] << ", ";
+        ss << std::setw(_wid) << (*this)[0] << ", ";
         ss << "... , ";
-        ss << std::setw(_wid) << m_data[m_size-1].d[3] << ") ";
+        ss << std::setw(_wid) << (*this)[4*m_size-1] << ") ";
         return ss.str();
     }
 
@@ -150,7 +179,7 @@ public:
     {
     #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = 0.0;
+            m_data[i].pd = 0.0;
     }
 
     tv_array(uint64 n, const double& val)
@@ -158,7 +187,7 @@ public:
     {
     #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = val;
+            m_data[i].pd = val;
     }
 
     ~tv_array()
@@ -170,7 +199,7 @@ public:
     {
     #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd = val;
+            m_data[i].pd = val;
         return *this;
     }
 
@@ -179,7 +208,7 @@ public:
     {
     #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd += val;
+            m_data[i].pd += val;
         return *this;
     }
 
@@ -188,7 +217,7 @@ public:
     {
     #pragma omp simd
         for(uint32 i = 0; i < m_size; ++i)
-            m_data[i].sd += val.m_data[i].sd;
+            m_data[i].pd += val.m_data[i].pd;
         return *this;
     }
 
